@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
             // 427x240 (voir le commentaire en haut du document).
         
             // Exemple d'appel à ecrireImage (n'oubliez pas de remplacer les arguments commençant par A_REMPLIR!)
-            ecrireImage(A_REMPLIR_POSITION_ACTUELLE, 
+            /*ecrireImage(A_REMPLIR_POSITION_ACTUELLE, 
                         nbrActifs, 
                         fbfd, 
                         fbp, 
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
                         A_REMPLIR_DONNEES_DE_LA_TRAME,
                         A_REMPLIR_HAUTEUR_DE_LA_TRAME,
                         A_REMPLIR_LARGEUR_DE_LA_TRAME,
-                        A_REMPLIR_NOMBRECANAUX_DANS_LA_TRAME);
+                        A_REMPLIR_NOMBRECANAUX_DANS_LA_TRAME);*/
     }
 
 
