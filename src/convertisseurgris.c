@@ -14,6 +14,8 @@
 #include "allocateurMemoire.h"
 #include "commMemoirePartagee.h"
 #include "utils.h"
+#include <unistd.h>
+#include <getopt.h>
 
 
 int main(int argc, char* argv[]){
@@ -81,13 +83,138 @@ int main(int argc, char* argv[]){
     // en tant qu'écrivain).
     // Initialisez également votre allocateur mémoire (avec prepareMemoire). Assurez-vous que toute la mémoire utilisée dans la
     // section critique est ainsi préallouée ET bloquée (voir documentation de mlock/mlockall).
+
+    struct memPartage inZone = {0};
+    struct memPartage outZone = {0};
+
+    if (initMemoirePartageeLecteur(entree, &inZone) != 0)
+        {
+            printf("Erreur d'initialisation memoire partagee lecteur\n");
+            return -1;
+        }
+
+    // On peut initialiser la memoire out avec un canal de 1, puisque c'est le format de sortie (niveaux de gris)
+    // Donc on se crée une struct videoInfos temporaire pour initialiser la memoire partagee de sortie, avec canaux = 1
+    struct videoInfos tempInfos = {0};
+    tempInfos.canaux = 1;
+    tempInfos.largeur = inZone.header->infos.largeur;
+    tempInfos.hauteur = inZone.header->infos.hauteur;
+    tempInfos.fps = inZone.header->infos.fps;
+
+    if (initMemoirePartageeEcrivain(sortie, &outZone, &tempInfos) != 0)
+    {
+        printf("Erreur d'initialisation memoire partagee ecrivain\n");
+        return -1;
+    }
+
+    uint32_t largeurVideo = tempInfos.largeur;
+    uint32_t hauteurVideo = tempInfos.hauteur;
+    uint32_t canauxVideo = inZone.header->infos.canaux;
+
+
+    // Sans cast : largeur * hauteur est calculé en uint32_t, puis converti en size_t (overflow possible).
+    // Avec cast : (size_t)largeur force le calcul en size_t dès le départ.
+    // Exemple : uint32_t largeur = 100 000, uint32_t hauteur = 100 000, size_t taille = largeur * hauteur;
+    // Sans cast : 100 000 * 100 000 = 10 000 000 000 (overflow car ca dépasse la valeur max d'un uint32_t, 
+    // donc résultat incorrect), puis ensuite on converti en size_t (toujours incorrect).
+    // Avec cast : (size_t)100 000 * 100 000 = 10 000 000 000 (calcul correct, car on converti en size_t avant de multiplier),
+    // donc aucun overflow possible, et résultat correct.
+    size_t tailleIn  = (size_t)largeurVideo * hauteurVideo * canauxVideo;
+    size_t tailleOut = (size_t)largeurVideo * hauteurVideo; // puisque le résultat est en niveaux de gris (1 canal)
+
+    if (prepareMemoire(tailleIn, tailleOut) != 0)
+    {
+        printf("Erreur d'allocation memoire\n");
+        return -1;
+    }
     
+    // Permet de retirer la limite de mémoire pouvant être verrouillée
+    if (setrlimit(RLIMIT_MEMLOCK, &(struct rlimit){.rlim_cur = RLIM_INFINITY, .rlim_max = RLIM_INFINITY}) == -1)
+    {
+        printf("Erreur lors de la suppression de la limite de verrouillage memoire\n");
+        return -1;
+    }
+    
+    if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
+    {
+        printf("Erreur lors du verrouillage memoire\n");
+        return -1;
+    }
+
+    // Comme que convertToGray lit et écrit des données dans les zones mémoire partagées,
+    // on créer une copie locale de ces données pour éviter de bloquer le mutex pendant toute
+    // la durée du traitement (ce qui serait le cas si on passait directement les pointeurs de
+    // la mémoire partagée à convertToGray).
+    unsigned char* tempIn = tempsreel_malloc(tailleIn);
+    unsigned char* tempOut = tempsreel_malloc(tailleOut);
+    if (tempIn == NULL || tempOut == NULL)
+    {
+        printf("Erreur d'allocation memoire pour les buffers temporaires\n");
+        return -1;
+    }
+
+
+
     // Section critique (boucle à l'infini).
     while(1){
         // Écrivez le code permettant de convertir une image en niveaux de gris, en utilisant la
         // fonction convertToGray de utils.c. Votre code doit lire une image depuis une zone mémoire 
         // partagée et envoyer le résultat sur une autre zone mémoire partagée.
+
+        // Evenement de profilage : attente mutex lecture
+        evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
+        attenteLecteur(&inZone);
+
+        // Evenement de profilage : traitement
+        evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+        memcpy(tempIn, inZone.data, tailleIn); // Copie locale des données d'entrée pour éviter de bloquer le mutex pendant le traitement
+        signalLecteur(&inZone);
+        //unsigned char* inData = tempIn; // Pointeur vers les données d'entrée (image à convertir)
+        //unsigned char* outData = tempOut; // Pointeur vers les données de sortie (image convertie)
+
+        // Evenement de profilage : attente mutex ecriture
+        //evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
+        //attenteEcrivain(&outZone);
+
+        // Evenement de profilage : traitement
+        //evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+
+        if (canauxVideo == 1) // Iamge déjà en niveaux de gris, on peut juste copier les données d'entrée vers la sortie
+        {
+            //const unsigned int total_pixels = hauteurVideo * largeurVideo;
+            //const unsigned char *src = inData;
+            //unsigned char *dst = outData;
+            
+            //for (unsigned int idx = 0; idx < total_pixels; ++idx) {
+                //*dst++ = (unsigned char)src[0];
+                //src += canauxVideo;
+            //}
+
+            // Evenement de profilage : attente mutex ecriture
+            evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
+            attenteEcrivain(&outZone);
+
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+            memcpy(outZone.data, tempIn, tailleOut);
+            signalEcrivain(&outZone);
+            continue; // On peut passer directement à la prochaine itération de la boucle
+        }
+        
+        // Evenement de profilage : traitement
+        //evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+        convertToGray(tempIn, hauteurVideo, largeurVideo, canauxVideo, tempOut);
+
+        // Evenement de profilage : attente mutex ecriture
+        evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
+        attenteEcrivain(&outZone);
+        evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+        memcpy(outZone.data, tempOut, tailleOut);
+        signalEcrivain(&outZone);
+
     }
+
+    tempsreel_free(tempIn);
+    tempsreel_free(tempOut);
 
     return 0;
 }
