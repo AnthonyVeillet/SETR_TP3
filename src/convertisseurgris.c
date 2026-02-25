@@ -47,6 +47,9 @@ int main(int argc, char* argv[]){
         printf("Mode debug selectionne pour le convertisseur niveau de gris\n");
         entree = (char*)"/mem1";
         sortie = (char*)"/mem2";
+        runtime = 10;
+        deadline = 20;
+        period = 25;
     }
     else{
         int c;
@@ -110,6 +113,11 @@ int main(int argc, char* argv[]){
     uint32_t largeurVideo = tempInfos.largeur;
     uint32_t hauteurVideo = tempInfos.hauteur;
     uint32_t canauxVideo = inZone.header->infos.canaux;
+    if (canauxVideo != 1 && canauxVideo != 3)
+    {
+        printf("Format de video non supporte (canaux = %u), seulement les formats en niveaux de gris (1 canal) et BGR (3 canaux) sont supportes\n", canauxVideo);
+        return -1;
+    }
 
 
     // Sans cast : largeur * hauteur est calculé en uint32_t, puis converti en size_t (overflow possible).
@@ -145,9 +153,9 @@ int main(int argc, char* argv[]){
     // on créer une copie locale de ces données pour éviter de bloquer le mutex pendant toute
     // la durée du traitement (ce qui serait le cas si on passait directement les pointeurs de
     // la mémoire partagée à convertToGray).
-    unsigned char* tempIn = tempsreel_malloc(tailleIn);
+    //unsigned char* tempIn = tempsreel_malloc(tailleIn);
     unsigned char* tempOut = tempsreel_malloc(tailleOut);
-    if (tempIn == NULL || tempOut == NULL)
+    if (tempOut == NULL)
     {
         printf("Erreur d'allocation memoire pour les buffers temporaires\n");
         return -1;
@@ -161,59 +169,40 @@ int main(int argc, char* argv[]){
         // fonction convertToGray de utils.c. Votre code doit lire une image depuis une zone mémoire 
         // partagée et envoyer le résultat sur une autre zone mémoire partagée.
 
-        // Evenement de profilage : attente mutex lecture
-        evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
-        attenteLecteur(&inZone);
-
-        // Evenement de profilage : traitement
         evenementProfilage(&profInfos, ETAT_TRAITEMENT);
-        memcpy(tempIn, inZone.data, tailleIn); // Copie locale des données d'entrée pour éviter de bloquer le mutex pendant le traitement
-        signalLecteur(&inZone);
-        //unsigned char* inData = tempIn; // Pointeur vers les données d'entrée (image à convertir)
-        //unsigned char* outData = tempOut; // Pointeur vers les données de sortie (image convertie)
-
-        // Evenement de profilage : attente mutex ecriture
-        //evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
-        //attenteEcrivain(&outZone);
-
-        // Evenement de profilage : traitement
-        //evenementProfilage(&profInfos, ETAT_TRAITEMENT);
-
-        if (canauxVideo == 1) // Iamge déjà en niveaux de gris, on peut juste copier les données d'entrée vers la sortie
+        if (canauxVideo == 1)
         {
-            //const unsigned int total_pixels = hauteurVideo * largeurVideo;
-            //const unsigned char *src = inData;
-            //unsigned char *dst = outData;
-            
-            //for (unsigned int idx = 0; idx < total_pixels; ++idx) {
-                //*dst++ = (unsigned char)src[0];
-                //src += canauxVideo;
-            //}
+            evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
+            attenteLecteur(&inZone);
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+            memcpy(tempOut, inZone.data, tailleOut); // On peut copier directement les données d'entrée vers tempOut, puisque c'est déjà en niveaux de gris
+            signalLecteur(&inZone);
 
-            // Evenement de profilage : attente mutex ecriture
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
             attenteEcrivain(&outZone);
-
             evenementProfilage(&profInfos, ETAT_TRAITEMENT);
-            memcpy(outZone.data, tempIn, tailleOut);
+            memcpy(outZone.data, tempOut, tailleOut); // Copie sortie temporaire vers la mémoire partagée de sortie
             signalEcrivain(&outZone);
             continue; // On peut passer directement à la prochaine itération de la boucle
         }
         
-        // Evenement de profilage : traitement
-        //evenementProfilage(&profInfos, ETAT_TRAITEMENT);
-        convertToGray(tempIn, hauteurVideo, largeurVideo, canauxVideo, tempOut);
-
+        // Evenement de profilage : attente mutex lecture
+        evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
+        attenteLecteur(&inZone);
+        evenementProfilage(&profInfos, ETAT_TRAITEMENT); // Evenement de profilage : traitement
+        // Traitement direct dans tempOut pour éviter de bloquer le mutex pendant toute la durée du traitement
+        convertToGray(inZone.data, hauteurVideo, largeurVideo, canauxVideo, tempOut);
+        signalLecteur(&inZone);
+        
         // Evenement de profilage : attente mutex ecriture
         evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
         attenteEcrivain(&outZone);
         evenementProfilage(&profInfos, ETAT_TRAITEMENT);
         memcpy(outZone.data, tempOut, tailleOut);
         signalEcrivain(&outZone);
-
     }
 
-    tempsreel_free(tempIn);
+    //tempsreel_free(tempIn);
     tempsreel_free(tempOut);
 
     return 0;
