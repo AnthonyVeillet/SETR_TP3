@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
     // Changement de mode d'ordonnancement
     appliquerOrdonnancement(&schedParams, "convertisseur");
     
-    // TODO : Écrivez ici le code initialisant les zones mémoire partagées (une en entrée, en tant que lecteur, et l'autre en sortie,
+    // FAIT PAR ANTHONY VEILLET : Écrivez ici le code initialisant les zones mémoire partagées (une en entrée, en tant que lecteur, et l'autre en sortie,
     // en tant qu'écrivain).
     // Initialisez également votre allocateur mémoire (avec prepareMemoire). Assurez-vous que toute la mémoire utilisée dans la
     // section critique est ainsi préallouée ET bloquée (voir documentation de mlock/mlockall).
