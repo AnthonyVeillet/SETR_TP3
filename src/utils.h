@@ -29,6 +29,7 @@ extern "C" {
 #include <sched.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "allocateurMemoire.h"
 
 #define ORDONNANCEMENT_NORT 0
