@@ -178,7 +178,7 @@ int main(int argc, char* argv[]){
     // on créer une copie locale de ces données pour éviter de bloquer le mutex pendant toute
     // la durée du traitement (ce qui serait le cas si on passait directement les pointeurs de
     // la mémoire partagée).
-    //unsigned char* tempIn = tempsreel_malloc(tailleIn);
+    unsigned char* tempIn = tempsreel_malloc(tailleIn);
     unsigned char* tempOut = tempsreel_malloc(tailleOut);
     if (tempOut == NULL)
     {
@@ -231,11 +231,13 @@ int main(int argc, char* argv[]){
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
             attenteLecteur(&inZone);
             evenementProfilage(&profInfos, ETAT_TRAITEMENT); // Evenement de profilage : traitement
+            memcpy(tempIn, inZone.data, tailleIn);
+            signalLecteur(&inZone); // libère vite l'entrée
             // Traitement direct dans tempOut pour éviter de bloquer le mutex pendant toute la durée du traitement
-            resizeNearestNeighbor(inZone.data, hauteurVideoIn, largeurVideoIn, tempOut,
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+            resizeNearestNeighbor(tempIn, hauteurVideoIn, largeurVideoIn, tempOut,
                                     hauteurVideoOut, largeurVideoOut, rg, canauxVideoIn);
             
-            signalLecteur(&inZone);
             
             // Evenement de profilage : attente mutex ecriture
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
@@ -248,14 +250,14 @@ int main(int argc, char* argv[]){
         else if (r == 1)
         {
             // Evenement de profilage : attente mutex lecture
-            evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
-            attenteLecteur(&inZone);
             evenementProfilage(&profInfos, ETAT_TRAITEMENT); // Evenement de profilage : traitement
+            memcpy(tempIn, inZone.data, tailleIn);
+            signalLecteur(&inZone); // libère vite l'entrée
             // Traitement direct dans tempOut pour éviter de bloquer le mutex pendant toute la durée du traitement
-            resizeBilinear(inZone.data, hauteurVideoIn, largeurVideoIn, tempOut,
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+            resizeBilinear(tempIn, hauteurVideoIn, largeurVideoIn, tempOut,
                                     hauteurVideoOut, largeurVideoOut, rg, canauxVideoIn);
             
-            signalLecteur(&inZone);
             
             // Evenement de profilage : attente mutex ecriture
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);

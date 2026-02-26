@@ -4,13 +4,11 @@
 # Modifs:
 #  - input/output par defaut dans ./Profilages + creation du dossier
 #  - demande interactive de la duree AVEC validation selon la duree max dispo
-#  - demande interactive pour nettoyer Profilages/ (en gardant le graph de sortie)
+#  - demande interactive pour nettoyer Profilages/ (supprime SEULEMENT profilage*.txt)
 
 import argparse
 import math
-import shutil
 from pathlib import Path
-from typing import Set
 
 import numpy as np
 import matplotlib
@@ -83,7 +81,9 @@ def _ask_duration_seconds(max_seconds: float) -> int:
 
 def _ask_cleanup_profilages_dir(dir_path: Path) -> bool:
     while True:
-        raw = input(f"Veux-tu vider le dossier '{dir_path}' après lecture (O/n) ? ").strip().lower()
+        raw = input(
+            f"Veux-tu supprimer les fichiers 'profilage*.txt' dans '{dir_path}' (O/n) ? "
+        ).strip().lower()
         if raw in ("", "o", "oui", "y", "yes"):
             return True
         if raw in ("n", "non", "no"):
@@ -91,35 +91,21 @@ def _ask_cleanup_profilages_dir(dir_path: Path) -> bool:
         print("⚠️  Réponds O ou N.")
 
 
-def _cleanup_dir_keep(dir_path: Path, keep_paths: Set[Path]) -> None:
+def _cleanup_only_profilage_txt(dir_path: Path) -> int:
     """
-    Supprime tout le contenu de dir_path, sauf ce qui est dans keep_paths.
-    (Le fichier de sortie peut ne pas exister encore — ça ne change rien,
-     on supprime juste les items actuellement présents.)
+    Supprime uniquement les fichiers texte de profilage:
+    - profilage*.txt (ex: profilage-decodeur-1501.txt)
+    Retourne le nombre de fichiers supprimés.
     """
-    keep_resolved = {p.resolve() for p in keep_paths}
-
-    for item in dir_path.iterdir():
-        try:
-            item_resolved = item.resolve()
-        except FileNotFoundError:
-            continue
-
-        # Garde le fichier exact
-        if item_resolved in keep_resolved:
-            continue
-
-        # Garde le dossier parent si un keep est dedans (ex: Profilages/out/graph.png)
-        if any(str(kr).startswith(str(item_resolved) + "/") for kr in keep_resolved):
-            continue
-
-        if item.is_dir():
-            shutil.rmtree(item, ignore_errors=True)
-        else:
+    count = 0
+    for f in dir_path.glob("profilage*.txt"):
+        if f.is_file():
             try:
-                item.unlink()
+                f.unlink()
+                count += 1
             except FileNotFoundError:
                 pass
+    return count
 
 
 if __name__ == "__main__":
@@ -205,16 +191,15 @@ if __name__ == "__main__":
     # Demande interactive de la duree (validee)
     duree = _ask_duration_seconds(max_seconds_disponible)
 
-    # Demande si on nettoie Profilages/ (APRES lecture -> safe)
+    # Demande si on supprime seulement profilage*.txt (APRES lecture -> safe)
     if _ask_cleanup_profilages_dir(args.dossier_input):
-        _cleanup_dir_keep(args.dossier_input, keep_paths={sortie_path})
-        print("✅ Dossier Profilages nettoyé (le graph de sortie est conservé).")
+        nb = _cleanup_only_profilage_txt(args.dossier_input)
+        print(f"✅ Nettoyage fait: {nb} fichier(s) profilage*.txt supprimé(s). (stats.txt conservé)")
 
     # Temps max en ns pour l'affichage
     if duree == -1:
         temps_max_ns = max(0.0, end_temps - ref_temps)
     else:
-        # clamp au max dispo (sécurité)
         temps_max_ns = min(duree * 1e9, max(0.0, end_temps - ref_temps))
 
     # Evite un graphe degenerate si 0

@@ -159,9 +159,9 @@ int main(int argc, char* argv[]){
     // on créer une copie locale de ces données pour éviter de bloquer le mutex pendant toute
     // la durée du traitement (ce qui serait le cas si on passait directement les pointeurs de
     // la mémoire partagée à convertToGray).
-    //unsigned char* tempIn = tempsreel_malloc(tailleIn);
+    unsigned char* tempIn = tempsreel_malloc(tailleIn);
     unsigned char* tempOut = tempsreel_malloc(tailleOut);
-    if (tempOut == NULL)
+    if ((tempOut == NULL) || (tempIn == NULL))
     {
         printf("Erreur d'allocation memoire pour les buffers temporaires\n");
         return -1;
@@ -196,9 +196,11 @@ int main(int argc, char* argv[]){
         evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
         attenteLecteur(&inZone);
         evenementProfilage(&profInfos, ETAT_TRAITEMENT); // Evenement de profilage : traitement
+        memcpy(tempIn, inZone.data, tailleIn);
+        signalLecteur(&inZone); // libère vite l'entrée
         // Traitement direct dans tempOut pour éviter de bloquer le mutex pendant toute la durée du traitement
-        convertToGray(inZone.data, hauteurVideo, largeurVideo, canauxVideo, tempOut);
-        signalLecteur(&inZone);
+        evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+        convertToGray(tempIn, hauteurVideo, largeurVideo, canauxVideo, tempOut);
         
         // Evenement de profilage : attente mutex ecriture
         evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);

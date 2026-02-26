@@ -11,3 +11,10 @@
 !/build/convertisseur
 !/build/filtreur
 !/build/redimensionneur
+
+
+# Ignore tout le dossier Profilages
+src/Profilages/*
+
+# MAIS garder les images PNG
+!src/Profilages/*.png

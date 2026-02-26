@@ -163,7 +163,7 @@ int main(int argc, char* argv[]){
     // on créer une copie locale de ces données pour éviter de bloquer le mutex pendant toute
     // la durée du traitement (ce qui serait le cas si on passait directement les pointeurs de
     // la mémoire partagée).
-    //unsigned char* tempIn = tempsreel_malloc(tailleIn);
+    unsigned char* tempIn = tempsreel_malloc(tailleImg);
     unsigned char* tempOut = tempsreel_malloc(tailleImg);
     if (tempOut == NULL)
     {
@@ -191,11 +191,13 @@ int main(int argc, char* argv[]){
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
             attenteLecteur(&inZone);
             evenementProfilage(&profInfos, ETAT_TRAITEMENT); // Evenement de profilage : traitement
+            memcpy(tempIn, inZone.data, tailleImg);
+            signalLecteur(&inZone); // libère vite l'entrée
             // Traitement direct dans tempOut pour éviter de bloquer le mutex pendant toute la durée du traitement
-            lowpassFilter(hauteurVideo, largeurVideo, inZone.data, tempOut,
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+            lowpassFilter(hauteurVideo, largeurVideo, tempIn, tempOut,
                             kernel_size, sigma, canauxVideo);
             
-            signalLecteur(&inZone);
             
             // Evenement de profilage : attente mutex ecriture
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
@@ -211,11 +213,13 @@ int main(int argc, char* argv[]){
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
             attenteLecteur(&inZone);
             evenementProfilage(&profInfos, ETAT_TRAITEMENT); // Evenement de profilage : traitement
+            memcpy(tempIn, inZone.data, tailleImg);
+            signalLecteur(&inZone); // libère vite l'entrée
             // Traitement direct dans tempOut pour éviter de bloquer le mutex pendant toute la durée du traitement
-            highpassFilter(hauteurVideo, largeurVideo, inZone.data, tempOut,
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
+            highpassFilter(hauteurVideo, largeurVideo, tempIn, tempOut,
                             kernel_size, sigma, canauxVideo);
             
-            signalLecteur(&inZone);
             
             // Evenement de profilage : attente mutex ecriture
             evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXECRITURE);
