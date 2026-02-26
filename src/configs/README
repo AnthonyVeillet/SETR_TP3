@@ -1,0 +1,13 @@
+Copier tout les fichiers sur le PI a la racine du projet qui contient tout les executables.
+
+Dans le terminal de la VM, faire exemple:
+scp ~/projets/labo3-h26-main/src/configs/*.bash \
+    ~/projets/labo3-h26-main/src/configs/run_test.sh \
+  pi@rookko.duckdns.org:~/projects/laboratoire3/
+
+
+Ensuite, une fois dans le terminal du PI, faire:
+cd ~/projects/laboratoire3
+./run_test.sh
+
+Cela demandera au user quel test faire et possible une fonction pour killall automatique lorsqu'on fait CTRL+C

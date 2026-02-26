@@ -71,7 +71,7 @@ int appliquerOrdonnancement(const struct SchedParams* params, const char* nomPro
 #define ETAT_ENPAUSE 50
 
 // Mettre a zero pour desactiver le profilage
-#define PROFILAGE_ACTIF 1
+#define PROFILAGE_ACTIF 0
 // Assez d'espace pour 30 caracteres par evenement * 5 evenements par boucle * 30 images par seconde
 #define PROFILAGE_INTERVALLE_SAUVEGARDE_SEC 4
 #define PROFILAGE_TAILLE_INIT 30 * 5 * 30 * PROFILAGE_INTERVALLE_SAUVEGARDE_SEC * 4
