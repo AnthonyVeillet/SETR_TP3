@@ -16,6 +16,7 @@
 #include "utils.h"
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/mman.h>
 
 
 int main(int argc, char* argv[]){
@@ -50,6 +51,7 @@ int main(int argc, char* argv[]){
         runtime = 10;
         deadline = 20;
         period = 25;
+        (void)runtime; (void)deadline; (void)period; // Pour retirer les warning qui dise qu'ils ne sont pas utilisés
     }
     else{
         int c;
@@ -80,12 +82,16 @@ int main(int argc, char* argv[]){
     printf("Initialisation convertisseur, entree=%s, sortie=%s, mode d'ordonnancement=%i\n", entree, sortie, schedParams.modeOrdonnanceur);
     
     // Changement de mode d'ordonnancement
-    appliquerOrdonnancement(&schedParams, "convertisseur");
+    if (appliquerOrdonnancement(&schedParams, "convertisseurgris") != 0) {
+        printf("Erreur appliquerOrdonnancement\n");
+        return -1;
+    }
     
-    // FAIT PAR ANTHONY VEILLET : Écrivez ici le code initialisant les zones mémoire partagées (une en entrée, en tant que lecteur, et l'autre en sortie,
+    // FAIT PAR ANTHONY VEILLET
+    // Code initialisant les zones mémoire partagées (une en entrée, en tant que lecteur, et l'autre en sortie,
     // en tant qu'écrivain).
-    // Initialisez également votre allocateur mémoire (avec prepareMemoire). Assurez-vous que toute la mémoire utilisée dans la
-    // section critique est ainsi préallouée ET bloquée (voir documentation de mlock/mlockall).
+    // Initialise également l'allocateur mémoire (avec prepareMemoire). S'assure que toute la mémoire utilisée dans la
+    // section critique est préallouée ET bloquée
 
     struct memPartage inZone = {0};
     struct memPartage outZone = {0};
@@ -165,8 +171,8 @@ int main(int argc, char* argv[]){
 
     // Section critique (boucle à l'infini).
     while(1){
-        // Écrivez le code permettant de convertir une image en niveaux de gris, en utilisant la
-        // fonction convertToGray de utils.c. Votre code doit lire une image depuis une zone mémoire 
+        // Code permettant de convertir une image en niveaux de gris, en utilisant la
+        // fonction convertToGray de utils.c. Le code lit une image depuis une zone mémoire 
         // partagée et envoyer le résultat sur une autre zone mémoire partagée.
 
         evenementProfilage(&profInfos, ETAT_TRAITEMENT);

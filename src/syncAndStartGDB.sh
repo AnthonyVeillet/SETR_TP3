@@ -3,7 +3,7 @@ set -e
 
 # Sync executable
 bn=$(basename $1)
-rpiaddr="10.241.110.181"
+rpiaddr="192.168.2.207"
 
 if [ "$2" == "all" ]; then
     rsync -az $1/build/compositeur $1/build/decodeur $1/build/convertisseur $1/build/filtreur $1/build/redimensionneur "pi@$rpiaddr:/home/pi/projects/laboratoire3/"

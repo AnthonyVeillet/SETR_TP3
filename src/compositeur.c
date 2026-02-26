@@ -199,6 +199,11 @@ int main(int argc, char* argv[])
         largeurVideo3, hauteurVideo3, canauxVideo3, fpsVideo3,
         largeurVideo4, hauteurVideo4, canauxVideo4, fpsVideo4;
 
+    largeurVideo1 = hauteurVideo1 = canauxVideo1 = fpsVideo1 = 0;
+    largeurVideo2 = hauteurVideo2 = canauxVideo2 = fpsVideo2 = 0;
+    largeurVideo3 = hauteurVideo3 = canauxVideo3 = fpsVideo3 = 0;
+    largeurVideo4 = hauteurVideo4 = canauxVideo4 = fpsVideo4 = 0;
+
     // On desactive le buffering pour les printf(), pour qu'il soit possible de les voir depuis votre ordinateur
     setbuf(stdout, NULL);
     
@@ -231,6 +236,7 @@ int main(int argc, char* argv[])
         runtime = 10;
         deadline = 20;
         period = 25;
+        (void)runtime; (void)deadline; (void)period; // Pour retirer les warning qui dise qu'ils ne sont pas utilisés
 
         nbrActifs = 4;
         printf("Initialisation compositeur, entree1=%s, entree2=%s, entree3=%s, entree4=%s, "
@@ -369,6 +375,7 @@ int main(int argc, char* argv[])
             largeurVideo2 = zone2.header->infos.largeur;
             hauteurVideo2 = zone2.header->infos.hauteur;
             canauxVideo2 = zone2.header->infos.canaux;
+            fpsVideo2 = zone2.header->infos.fps;
 
             if ((fpsVideo1 == 0) || (fpsVideo2 == 0))
             {
@@ -495,7 +502,10 @@ int main(int argc, char* argv[])
     }
 
     // Changement de mode d'ordonnancement
-    appliquerOrdonnancement(&schedParams, "compositeur");
+    if (appliquerOrdonnancement(&schedParams, "compositeur") != 0) {
+        printf("Erreur appliquerOrdonnancement\n");
+        return -1;
+    }
 
 
     // Initialisation des structures nécessaires à l'affichage
@@ -603,6 +613,16 @@ int main(int argc, char* argv[])
     int framesWin[4] = {0};
 
     double nextStatsWrite = debutCompositeur + 5.0;
+
+    size_t maxFrameIn = 427u * 240u * 3u; // le plus gros bloc alloué (BGR)
+    if (prepareMemoire(maxFrameIn, maxFrameIn) != 0) {
+        printf("Erreur prepareMemoire\n");
+        return -1;
+    }
+
+    struct rlimit rl = { .rlim_cur = RLIM_INFINITY, .rlim_max = RLIM_INFINITY };
+    setrlimit(RLIMIT_MEMLOCK, &rl);
+    mlockall(MCL_CURRENT | MCL_FUTURE);
 
     // init par entrée active
     for (int i = 0; i < nbrActifs; i++) {
