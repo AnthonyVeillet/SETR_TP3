@@ -1,9 +1,15 @@
 Question 1 : Avez-vous utilisé un ou des outils d'IA pour ce laboratoire, même seulement en partie (oui/non)?
+Benoît Audet: Oui
+
 
 Répondez aux questions suivantes seulement si vous avez répondu "oui" à la question précédente.
 
 Question 2 : Quels modèles (ex., Claude Opus, Gemini Pro, GPT-Codex, etc.)?
+Benoît Audet: Claude Opus, Gemini Pro, ChatGPT 5
+
 
 Question 3 : Pour la réalisation de quelles tâches en particulier? Donnez un exemple de "prompt" utilisé et de résultat.
+Benoît Audet: Pour du débogage et pour des squelettes de code, par exemple: Les images traitées ne sont pas fluides, inspecte mon décodeur et trouve des sources potentielles d'erreur. Réponse typique: Je vois que vos conditions et mutex sont mal placés pour respecter le traitement d'une section critique, voici des modifications pour corriger...
 
 Question 4 : Avez-vous rencontré des problèmes lors de l'utilisation de l'IA (mauvaise compréhension des commandes fournies, résultats erronés, etc.)? Qu'avez-vous fait pour les régler?
+Benoît Audet: Il m'arrivait de ne pas être assez précis dans ma requête, et que je doive préciser plus, ou ajouter le contexte de d'autres documents (.h par exemple).
