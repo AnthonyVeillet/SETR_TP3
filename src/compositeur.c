@@ -181,7 +181,7 @@ void ecrireImage(const int position, const int total,
 
 // Fonction pour helper
 static inline int lecture_pret(int r) {
-    return (r == 0);
+    return (r == 1);
 }
 
 int main(int argc, char* argv[])

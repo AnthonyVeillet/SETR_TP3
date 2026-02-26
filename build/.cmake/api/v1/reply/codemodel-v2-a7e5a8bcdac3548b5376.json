@@ -1,0 +1,96 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "SETR_TP3",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "compositeur::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-compositeur-Release-37907912279f29c800f8.json",
+					"name" : "compositeur",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "convertisseur::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-convertisseur-Release-d8f9f44026bb9d914d14.json",
+					"name" : "convertisseur",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "decodeur::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-decodeur-Release-dd1b9f697b5f61b95655.json",
+					"name" : "decodeur",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "filtreur::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-filtreur-Release-ddfebc657b394a2cc5de.json",
+					"name" : "filtreur",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "redimensionneur::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-redimensionneur-Release-2d3a1fc37a1e5b80b24c.json",
+					"name" : "redimensionneur",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/setr/projets/labo3-h26-main/build",
+		"source" : "/home/setr/projets/labo3-h26-main/src"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

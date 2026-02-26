@@ -1,0 +1,118 @@
+{
+	"kind" : "toolchains",
+	"toolchains" : 
+	[
+		{
+			"compiler" : 
+			{
+				"id" : "GNU",
+				"implicit" : 
+				{
+					"includeDirectories" : 
+					[
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/include/arm-linux-gnueabihf",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/lib/gcc/arm-linux-gnueabihf/14/include",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc/arm-raspbian-linux-gnueabihf/14.3.0/include",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc/arm-raspbian-linux-gnueabihf/14.3.0/include-fixed",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/include",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/include"
+					],
+					"linkDirectories" : 
+					[
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/lib/arm-linux-gnueabihf",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/lib/gcc/arm-linux-gnueabihf/14",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc/arm-raspbian-linux-gnueabihf/14.3.0",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/lib",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/lib",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/lib"
+					],
+					"linkFrameworkDirectories" : [],
+					"linkLibraries" : 
+					[
+						"gcc",
+						"gcc_s",
+						"c",
+						"gcc",
+						"gcc_s"
+					]
+				},
+				"path" : "/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/bin/arm-raspbian-linux-gnueabihf-gcc",
+				"version" : "14.3.0"
+			},
+			"language" : "C",
+			"sourceFileExtensions" : 
+			[
+				"c",
+				"m"
+			]
+		},
+		{
+			"compiler" : 
+			{
+				"id" : "GNU",
+				"implicit" : 
+				{
+					"includeDirectories" : 
+					[
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/include/arm-linux-gnueabihf",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/lib/gcc/arm-linux-gnueabihf/14/include",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/include/c++/14.3.0",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/include/c++/14.3.0/arm-raspbian-linux-gnueabihf",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/include/c++/14.3.0/backward",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc/arm-raspbian-linux-gnueabihf/14.3.0/include",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc/arm-raspbian-linux-gnueabihf/14.3.0/include-fixed",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/include",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/include"
+					],
+					"linkDirectories" : 
+					[
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/lib/arm-linux-gnueabihf",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/lib/gcc/arm-linux-gnueabihf/14",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc/arm-raspbian-linux-gnueabihf/14.3.0",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/lib/gcc",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/lib",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/lib",
+						"/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/arm-raspbian-linux-gnueabihf/sysroot/usr/lib"
+					],
+					"linkFrameworkDirectories" : [],
+					"linkLibraries" : 
+					[
+						"stdc++",
+						"m",
+						"gcc_s",
+						"gcc",
+						"c",
+						"gcc_s",
+						"gcc"
+					]
+				},
+				"path" : "/home/setr/arm-cross-comp-env/arm-raspbian-linux-gnueabihf/bin/arm-raspbian-linux-gnueabihf-g++",
+				"version" : "14.3.0"
+			},
+			"language" : "CXX",
+			"sourceFileExtensions" : 
+			[
+				"C",
+				"M",
+				"c++",
+				"cc",
+				"cpp",
+				"cxx",
+				"mm",
+				"mpp",
+				"CPP",
+				"ixx",
+				"cppm",
+				"ccm",
+				"cxxm",
+				"c++m"
+			]
+		}
+	],
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}
