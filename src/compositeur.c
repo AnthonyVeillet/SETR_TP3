@@ -764,11 +764,14 @@ int main(int argc, char* argv[])
         if (nextEvent > now) {
             double sleepSec = nextEvent - now;
             if (sleepSec > 0.0005) { // >0.5 ms
+                evenementProfilage(&profInfos, ETAT_ENPAUSE);
                 usleep((unsigned int)(sleepSec * 1e6));
             } else {
+                evenementProfilage(&profInfos, ETAT_ENPAUSE);
                 usleep(200); // micro-yield
             }
         } else {
+            evenementProfilage(&profInfos, ETAT_ENPAUSE);
             usleep(500); // fallback yield
         }
     }

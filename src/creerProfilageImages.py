@@ -1,8 +1,16 @@
 # Lit les fichiers de profilage et cree un graphique correspondant
 # Marc-Andre Gardner, Hiver 2025
+#
+# Modifs:
+#  - input/output par defaut dans ./Profilages + creation du dossier
+#  - demande interactive de la duree AVEC validation selon la duree max dispo
+#  - demande interactive pour nettoyer Profilages/ (en gardant le graph de sortie)
 
 import argparse
+import math
+import shutil
 from pathlib import Path
+from typing import Set
 
 import numpy as np
 import matplotlib
@@ -11,18 +19,7 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle, Patch
 
-# Usage
-# python creerProfilageImages.py dossier_vers_les_fichiers_prof-* --sortie=fichier_de_sortie_optionnel --duree=duree_en_secondes
-
-COULEUR_MAPPING = {
-    0: "#404040",
-    10: "#f5d742",
-    20: "#f52121",
-    30: "#00B500",
-    40: "#f542ef",
-    50: "#00CCFF",
-}
-COULEUR_MAPPING = {     # Voir https://jfly.uni-koeln.de/color/
+COULEUR_MAPPING = {  # Voir https://jfly.uni-koeln.de/color/
     0: "#000000",
     10: "#404040",
     20: "#F0E442",
@@ -30,79 +27,221 @@ COULEUR_MAPPING = {     # Voir https://jfly.uni-koeln.de/color/
     40: "#D55E00",
     50: "#56B4E9",
 }
-NS_TO_MS = 1e6
+NS_TO_MS = 1e6  # 1e6 ns = 1 ms
+
+
+def _ensure_dir_exists(dir_path: Path) -> None:
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+
+def _resolve_sortie_path(sortie: str, profilages_dir: Path) -> Path:
+    """
+    Si --sortie est un nom simple (ex: graph.png), on le met dans Profilages/.
+    Si --sortie contient un chemin, on le respecte, et on crée le dossier parent.
+    """
+    sortie_path = Path(sortie)
+
+    if sortie_path.is_absolute() or sortie_path.parent != Path("."):
+        _ensure_dir_exists(sortie_path.parent)
+        return sortie_path
+
+    _ensure_dir_exists(profilages_dir)
+    return profilages_dir / sortie_path
+
+
+def _ask_duration_seconds(max_seconds: float) -> int:
+    """
+    Demande une duree a l'utilisateur.
+    - Enter => -1 (tout afficher)
+    - Entier >= 0 et <= ceil(max_seconds) => OK
+    """
+    max_allowed = max(0, int(math.ceil(max_seconds)))
+    while True:
+        raw = input(
+            f"Durée à afficher en secondes (Enter = tout afficher, max ≈ {max_seconds:.2f}s) : "
+        ).strip()
+
+        if raw == "":
+            return -1
+
+        try:
+            v = int(raw)
+        except ValueError:
+            print("⚠️  Entre un entier (ex: 20) ou Enter.")
+            continue
+
+        if v < 0:
+            print("⚠️  Mets un entier >= 0, ou Enter pour tout afficher.")
+            continue
+
+        if v > max_allowed:
+            print(f"⚠️  Trop grand. Max dispo: {max_allowed}s (≈ {max_seconds:.2f}s).")
+            continue
+
+        return v
+
+
+def _ask_cleanup_profilages_dir(dir_path: Path) -> bool:
+    while True:
+        raw = input(f"Veux-tu vider le dossier '{dir_path}' après lecture (O/n) ? ").strip().lower()
+        if raw in ("", "o", "oui", "y", "yes"):
+            return True
+        if raw in ("n", "non", "no"):
+            return False
+        print("⚠️  Réponds O ou N.")
+
+
+def _cleanup_dir_keep(dir_path: Path, keep_paths: Set[Path]) -> None:
+    """
+    Supprime tout le contenu de dir_path, sauf ce qui est dans keep_paths.
+    (Le fichier de sortie peut ne pas exister encore — ça ne change rien,
+     on supprime juste les items actuellement présents.)
+    """
+    keep_resolved = {p.resolve() for p in keep_paths}
+
+    for item in dir_path.iterdir():
+        try:
+            item_resolved = item.resolve()
+        except FileNotFoundError:
+            continue
+
+        # Garde le fichier exact
+        if item_resolved in keep_resolved:
+            continue
+
+        # Garde le dossier parent si un keep est dedans (ex: Profilages/out/graph.png)
+        if any(str(kr).startswith(str(item_resolved) + "/") for kr in keep_resolved):
+            continue
+
+        if item.is_dir():
+            shutil.rmtree(item, ignore_errors=True)
+        else:
+            try:
+                item.unlink()
+            except FileNotFoundError:
+                pass
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="Afficheur des etats des programmes, Labo 3 SETR"
-    )
+    script_dir = Path(__file__).resolve().parent
+    profilages_dir_default = script_dir / "Profilages"
+
+    parser = argparse.ArgumentParser(prog="Afficheur des etats des programmes, Labo 3 SETR")
     parser.add_argument(
         "dossier_input",
-        help="Chemin vers le dossier contenant les fichiers profilage-*",
+        nargs="?",
+        default=profilages_dir_default,
+        help="Chemin vers le dossier contenant les fichiers profilage-*.txt (defaut: ./Profilages a cote du script)",
         type=Path,
     )
     parser.add_argument(
         "--sortie",
         type=str,
         default="graph.png",
-        help="Fichier de sortie (PNG), optionnel",
+        help="Fichier de sortie (PNG). Si nom simple, sera cree dans ./Profilages",
     )
-    parser.add_argument(
-        "--duree",
-        type=int,
-        default=-1,
-        help="Afficher uniquement les N premieres secondes (par defaut, tout afficher)",
-    )
+
     args = parser.parse_args()
+
+    # Dossier Profilages (input) : creation si absent
+    _ensure_dir_exists(args.dossier_input)
+
+    # Output : par defaut dans Profilages/
+    sortie_path = _resolve_sortie_path(args.sortie, args.dossier_input)
+
+    # Recupere les fichiers profilage txt
     files = sorted(
-        args.dossier_input.glob("profilage-*"),
-        key=lambda f: int(f.stem.rpartition("-")[2]),
+        args.dossier_input.glob("profilage-*.txt"),
+        key=lambda f: int(f.stem.rpartition("-")[2]) if f.stem.rpartition("-")[2].isdigit() else -1,
         reverse=True,
     )
+
+    if not files:
+        print(f"Aucun fichier profilage-*.txt trouve dans: {args.dossier_input}")
+        print("Assure-toi d'avoir copie les profilage-*.txt dans ce dossier.")
+        raise SystemExit(1)
+
     data = {}
 
-    print(
-        "Liste des derniers evenements par processus (voir le header utils.h pour la definition de chaque valeur numerique)"
-    )
+    print("Liste des derniers evenements par processus (voir utils.h pour la definition de chaque valeur numerique)")
+
+    # Lecture + validation (on charge en RAM)
     for fpath in files:
-        # Validation
         with open(fpath) as f:
             d = f.readlines()
             if len(d) < 3:
                 print(f"Attention, le fichier {fpath.stem} possède moins de 2 lignes et sera ignoré!")
                 continue
             if any(len(ligne) < 10 for ligne in d[:-1]):
-                print(f"Attention, le fichier {fpath.stem} possède des lignes invalides (moins de 10 caractères) et sera ignoré!")
+                print(f"Attention, le fichier {fpath.stem} possède des lignes invalides (< 10 caractères) et sera ignoré!")
                 continue
             if any(ligne.count(",") != 1 for ligne in d[:-1]):
-                print(f"Attention, le fichier {fpath.stem} possède des lignes invalides (sans caractère de séparation) et sera ignoré!")
+                print(f"Attention, le fichier {fpath.stem} possède des lignes invalides (séparateur) et sera ignoré!")
                 continue
-        data[fpath.stem] = np.loadtxt(fpath, delimiter=",")
+
+        arr = np.loadtxt(fpath, delimiter=",")
+        # Sécurité: si jamais loadtxt retourne 1D, on force 2D
+        if arr.ndim == 1:
+            arr = np.expand_dims(arr, axis=0)
+
+        data[fpath.stem] = arr
+
         print(
-            f"Dernier evenement pour {fpath.stem.partition('-')[2]} : {int(data[fpath.stem][-1,0])} au temps t={data[fpath.stem][-1,1]/1e9:.6f}"
-        )
-        data[fpath.stem] = np.concatenate(
-            (data[fpath.stem][:-1, :], data[fpath.stem][1:, 1:]), axis=1
+            f"Dernier evenement pour {fpath.stem.partition('-')[2]} : {int(arr[-1,0])} au temps t={arr[-1,1]/1e9:.6f}"
         )
 
+        # Transforme (etat, t_start) + prochaine ligne -> (etat, t_start, t_end)
+        data[fpath.stem] = np.concatenate((arr[:-1, :], arr[1:, 1:]), axis=1)
+
+    if not data:
+        print("Aucun fichier de profilage valide apres validation.")
+        raise SystemExit(1)
+
+    # Durée max dispo selon les données (en secondes)
     ref_temps = min(d[0, 1] for d in data.values())
-    temps_max = (
-        max(d[-1, 2] for d in data.values()) - ref_temps
-        if args.duree == -1
-        else args.duree * 1e9
-    )
+    end_temps = max(d[-1, 2] for d in data.values())
+    max_seconds_disponible = max(0.0, (end_temps - ref_temps) / 1e9)
 
-    fig, ax = plt.subplots(figsize=((temps_max / 1e9 / 2) + 10, 4), dpi=300)
+    # Demande interactive de la duree (validee)
+    duree = _ask_duration_seconds(max_seconds_disponible)
+
+    # Demande si on nettoie Profilages/ (APRES lecture -> safe)
+    if _ask_cleanup_profilages_dir(args.dossier_input):
+        _cleanup_dir_keep(args.dossier_input, keep_paths={sortie_path})
+        print("✅ Dossier Profilages nettoyé (le graph de sortie est conservé).")
+
+    # Temps max en ns pour l'affichage
+    if duree == -1:
+        temps_max_ns = max(0.0, end_temps - ref_temps)
+    else:
+        # clamp au max dispo (sécurité)
+        temps_max_ns = min(duree * 1e9, max(0.0, end_temps - ref_temps))
+
+    # Evite un graphe degenerate si 0
+    if temps_max_ns <= 0:
+        temps_max_ns = 1e6  # 1ms
+
+    # Plot
+    fig, ax = plt.subplots(figsize=((temps_max_ns / 1e9 / 2) + 10, 4), dpi=300)
+
     for i, (nom, d) in enumerate(data.items()):
         for etat, temps_debut, temps_fin in d:
+            # Coupe ce qui depasse la fenetre
+            if temps_debut < ref_temps:
+                temps_debut = ref_temps
+            if temps_fin > ref_temps + temps_max_ns:
+                temps_fin = ref_temps + temps_max_ns
+            if temps_fin <= temps_debut:
+                continue
+
             temps_norm_debut = (temps_debut - ref_temps) / NS_TO_MS
             temps_norm_fin = (temps_fin - ref_temps) / NS_TO_MS
+
             r = Rectangle(
                 (temps_norm_debut, i + 0.1),
                 temps_norm_fin,
                 0.8,
-                color=COULEUR_MAPPING[etat],
+                color=COULEUR_MAPPING.get(int(etat), "#000000"),
             )
             ax.add_patch(r)
 
@@ -110,6 +249,7 @@ if __name__ == "__main__":
         [(i + 0.5) for i in range(len(data))],
         labels=[k.partition("-")[2] for k in data.keys()],
     )
+
     graphpos = ax.get_position()
     ax.set_position(
         [
@@ -119,6 +259,7 @@ if __name__ == "__main__":
             graphpos.height * 0.89,
         ]
     )
+
     ax.legend(
         loc="upper left",
         bbox_to_anchor=(0.03, -0.15),
@@ -133,8 +274,11 @@ if __name__ == "__main__":
         ],
     )
 
-    plt.xlim(0, temps_max / NS_TO_MS)
+    plt.xlim(0, temps_max_ns / NS_TO_MS)
     plt.ylim(0, len(data))
     plt.xlabel("Temps (ms)")
     plt.ylabel("Processus")
-    plt.savefig(args.sortie, bbox_inches="tight", pad_inches=0.1)
+
+    _ensure_dir_exists(sortie_path.parent)
+    plt.savefig(str(sortie_path), bbox_inches="tight", pad_inches=0.1)
+    print(f"📈 Graph genere: {sortie_path}")
