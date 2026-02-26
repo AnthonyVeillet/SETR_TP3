@@ -580,10 +580,10 @@ int main(int argc, char* argv[])
     // ------------------------
     struct memPartage* zones[4] = { &zone1, &zone2, &zone3, &zone4 };
 
-    size_t w[4]  = { largeurVideo1, largeurVideo2, largeurVideo3, largeurVideo4 };
-    size_t h[4]  = { hauteurVideo1, hauteurVideo2, hauteurVideo3, hauteurVideo4 };
-    size_t ch[4] = { canauxVideo1,  canauxVideo2,  canauxVideo3,  canauxVideo4  };
-    size_t fps[4]= { fpsVideo1,     fpsVideo2,     fpsVideo3,     fpsVideo4     };
+    size_t w[4]  = { largeurVideo1, largeurVideo2, largeurVideo3, largeurVideo4};
+    size_t h[4]  = { hauteurVideo1, hauteurVideo2, hauteurVideo3, hauteurVideo4};
+    size_t ch[4] = { canauxVideo1, canauxVideo2, canauxVideo3, canauxVideo4};
+    size_t fps[4]= { fpsVideo1, fpsVideo2, fpsVideo3, fpsVideo4};
 
     // Pour éviter le malloc dans ecrireImage quand ch==1 : on stocke toujours une trame BGR (3 canaux)
     size_t pixels[4] = {0};
@@ -630,6 +630,7 @@ int main(int argc, char* argv[])
     }
 
     while(1) {
+        evenementProfilage(&profInfos, ETAT_TRAITEMENT);
         double now = get_time();
 
         // ------------------------
@@ -637,12 +638,14 @@ int main(int argc, char* argv[])
         // ------------------------
         for (int i = 0; i < nbrActifs; i++) {
 
+            evenementProfilage(&profInfos, ETAT_ATTENTE_MUTEXLECTURE);
             int r = attenteLecteurAsync(zones[i]);
+            evenementProfilage(&profInfos, ETAT_TRAITEMENT);
             if (!lecture_pret(r)) {
                 continue; // pas prêt -> next source
             }
 
-            // Ici, le mutex lecteur est lock (selon votre doc). On copie vite puis on libère.
+            // Ici, le mutex lecteur est lock. On copie puis on libère.
             if (ch[i] == 3) {
                 // BGR -> BGR
                 memcpy(lastFrameBGR[i], zones[i]->data, pixels[i] * 3u);
@@ -655,7 +658,6 @@ int main(int argc, char* argv[])
                     *dst++ = g; *dst++ = g; *dst++ = g;
                 }
             } else {
-                // should not happen si tes validations sont bonnes
                 signalLecteur(zones[i]);
                 continue;
             }
@@ -685,7 +687,7 @@ int main(int argc, char* argv[])
                 3 // toujours BGR
             );
 
-            // Stats : on compte seulement si une *nouvelle* frame est arrivée depuis le dernier affichage
+            // Stats, on compte seulement si une *nouvelle* frame est arrivée depuis le dernier affichage
             if (newFrame[i]) {
                 framesWin[i]++;
 
@@ -702,12 +704,12 @@ int main(int argc, char* argv[])
         }
 
         // ------------------------
-        // 3) stats.txt toutes ~5 sec
+        // 3) stats.txt toutes 5 sec
         // ------------------------
         if (now >= nextStatsWrite) {
             double elapsed = now - debutCompositeur;
 
-            // Une ligne, avec seulement les entrées actives, séparées par " | "
+            // Formatage
             fprintf(fstats, "[%.1f] ", elapsed);
 
             for (int i = 0; i < nbrActifs; i++) {
