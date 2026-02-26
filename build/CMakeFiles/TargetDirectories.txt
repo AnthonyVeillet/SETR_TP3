@@ -1,7 +1,0 @@
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/decodeur.dir
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/compositeur.dir
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/redimensionneur.dir
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/filtreur.dir
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/convertisseur.dir
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/edit_cache.dir
-/home/setr/projets/labo3-h26-main/build/CMakeFiles/rebuild_cache.dir

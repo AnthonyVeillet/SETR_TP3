@@ -1,4 +1,13 @@
 .vscode/
-
 *.o
 *.out
+
+# Ignore tout le dossier build...
+/build/*
+
+# ...sauf ces exécutables
+!/build/compositeur
+!/build/decodeur
+!/build/convertisseur
+!/build/filtreur
+!/build/redimensionneur
