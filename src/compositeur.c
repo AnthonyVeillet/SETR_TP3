@@ -65,8 +65,9 @@
 double get_time()
 {
     struct timeval t;
-    struct timezone tzp;
-    gettimeofday(&t, &tzp);
+    //struct timezone tzp; ERREUR AVEC STRUCT timezone NON DEFINIE, CORRECTION PAR CHATGPT
+    //gettimeofday(&t, &tzp);
+    gettimeofday(&t, NULL);
     return (double)t.tv_sec + (double)(t.tv_usec)*1e-6;
 }
 
@@ -178,7 +179,10 @@ void ecrireImage(const int position, const int total,
     }
 }
 
-
+// Fonction pour helper
+static inline int lecture_pret(int r) {
+    return (r == 0);
+}
 
 int main(int argc, char* argv[])
 {
@@ -194,12 +198,6 @@ int main(int argc, char* argv[])
         largeurVideo2, hauteurVideo2, canauxVideo2, fpsVideo2,
         largeurVideo3, hauteurVideo3, canauxVideo3, fpsVideo3,
         largeurVideo4, hauteurVideo4, canauxVideo4, fpsVideo4;
-    int statsEntree1 = 1, statsEntree2 = 2, statsEntree3 = 3, statsEntree4 = 4;
-    double
-        fpsMoyen1 = 0.0, fpsMax1, delaiMax1 = 0.0,
-        fpsMoyen2 = 0.0, fpsMax2, delaiMax2 = 0.0,
-        fpsMoyen3 = 0.0, fpsMax3, delaiMax3 = 0.0,
-        fpsMoyen4 = 0.0, fpsMax4, delaiMax4 = 0.0;
 
     // On desactive le buffering pour les printf(), pour qu'il soit possible de les voir depuis votre ordinateur
     setbuf(stdout, NULL);
@@ -270,11 +268,7 @@ int main(int argc, char* argv[])
             printf("Le nombre de FPS pour chaque vidéo doit être supérieur à 0\n");
             return -1;
         }
-        
-        fpsMax1 = 1 / (double)fpsVideo1; // Le delai entre chaque frame pour avoir le fps max indiqué
-        fpsMax2 = 1 / (double)fpsVideo2;
-        fpsMax3 = 1 / (double)fpsVideo3;
-        fpsMax4 = 1 / (double)fpsVideo4;
+
         if ((canauxVideo1 != 1 && canauxVideo1 != 3) || (canauxVideo2 != 1 && canauxVideo2 != 3) || (canauxVideo3 != 1 && canauxVideo3 != 3) || (canauxVideo4 != 1 && canauxVideo4 != 3))
         {
             printf("Format de video non supporte, seulement les formats gris ou BGR\n");
@@ -340,7 +334,6 @@ int main(int argc, char* argv[])
                 return -1;
             }
 
-            fpsMax1 = 1 / (double)fpsVideo1; // Le delai entre chaque frame pour avoir le fps max indiqué
             if (canauxVideo1 != 1 && canauxVideo1 != 3)
             {
                 printf("Format de video non supporte, seulement les formats gris ou BGR\n");
@@ -383,8 +376,6 @@ int main(int argc, char* argv[])
                 return -1;
             }
             
-            fpsMax1 = 1 / (double)fpsVideo1; // Le delai entre chaque frame pour avoir le fps max indiqué
-            fpsMax2 = 1 / (double)fpsVideo2;
             if ((canauxVideo1 != 1 && canauxVideo1 != 3) || (canauxVideo2 != 1 && canauxVideo2 != 3))
             {
                 printf("Format de video non supporte, seulement les formats gris ou BGR\n");
@@ -434,9 +425,6 @@ int main(int argc, char* argv[])
                 return -1;
             }
 
-            fpsMax1 = 1 / (double)fpsVideo1; // Le delai entre chaque frame pour avoir le fps max indiqué
-            fpsMax2 = 1 / (double)fpsVideo2;
-            fpsMax3 = 1 / (double)fpsVideo3;
             if ((canauxVideo1 != 1 && canauxVideo1 != 3) || (canauxVideo2 != 1 && canauxVideo2 != 3) || (canauxVideo3 != 1 && canauxVideo3 != 3))
             {
                 printf("Format de video non supporte, seulement les formats gris ou BGR\n");
@@ -492,10 +480,6 @@ int main(int argc, char* argv[])
                 return -1;
             }
 
-            fpsMax1 = 1 / (double)fpsVideo1; // Le delai entre chaque frame pour avoir le fps max indiqué
-            fpsMax2 = 1 / (double)fpsVideo2;
-            fpsMax3 = 1 / (double)fpsVideo3;
-            fpsMax4 = 1 / (double)fpsVideo4;
             if ((canauxVideo1 != 1 && canauxVideo1 != 3) || (canauxVideo2 != 1 && canauxVideo2 != 3) || (canauxVideo3 != 1 && canauxVideo3 != 3) || (canauxVideo4 != 1 && canauxVideo4 != 3))
             {
                 printf("Format de video non supporte, seulement les formats gris ou BGR\n");
@@ -589,10 +573,7 @@ int main(int argc, char* argv[])
     }
     setbuf(fstats, NULL);
 
-    double
-        debutCompositeur = get_time(), nextDelai = 5.0,
-        dernierDelai1 = 0.0, dernierDelai2 = 0.0, dernierDelai3 = 0.0, dernierDelai4 = 0.0;
-    double delai = debutCompositeur;
+    double debutCompositeur = get_time();
 
     // ------------------------
     // TABLEAUX (1 à 4 flux)
@@ -612,7 +593,7 @@ int main(int argc, char* argv[])
 
     // FPS cap par entrée (période)
     double fpsCap[4] = {0.0};
-    double period[4] = {0.0};
+    double framePeriod[4] = {0.0};
     double nextDisplay[4] = {0.0};
 
     // Stats fenêtre 5 sec
@@ -639,17 +620,13 @@ int main(int argc, char* argv[])
 
         // fallback fps si 0
         fpsCap[i] = (fps[i] == 0) ? 30.0 : (double)fps[i];
-        period[i] = 1.0 / fpsCap[i];
+        framePeriod[i] = 1.0 / fpsCap[i];
         nextDisplay[i] = debutCompositeur;
 
         winStart[i] = debutCompositeur;
         lastDisplayed[i] = -1.0;
         maxDt[i] = 0.0;
         framesWin[i] = 0;
-    }
-
-    static inline int lecture_pret(int r) {
-        return (r == 0);
     }
 
     while(1) {
@@ -721,7 +698,7 @@ int main(int argc, char* argv[])
             }
 
             // Prochain affichage (anti-drift)
-            do { nextDisplay[i] += period[i]; } while (nextDisplay[i] <= now);
+            do { nextDisplay[i] += framePeriod[i]; } while (nextDisplay[i] <= now);
         }
 
         // ------------------------
@@ -765,7 +742,7 @@ int main(int argc, char* argv[])
         if (nextEvent > now) {
             double sleepSec = nextEvent - now;
             if (sleepSec > 0.0005) { // >0.5 ms
-                usleep((useconds_t)(sleepSec * 1e6));
+                usleep((unsigned int)(sleepSec * 1e6));
             } else {
                 usleep(200); // micro-yield
             }
